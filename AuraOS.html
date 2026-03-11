@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraOS - Smart Vehicle Safety & Traffic Dashboard</title>
+    
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- React & ReactDOM (Core Libraries) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel (To compile React JSX code in the browser) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    
+    <!-- This is where the React App will be injected -->
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICON COMPONENT (Replaces Lucide-React for Offline HTML) ---
+        const Icon = ({ name, size = 24, className = '' }) => {
+            const iconMap = {
+                Car: 'fa-solid fa-car',
+                AlertTriangle: 'fa-solid fa-triangle-exclamation',
+                Phone: 'fa-solid fa-phone',
+                ShieldAlert: 'fa-solid fa-shield-virus',
+                MapPin: 'fa-solid fa-location-dot',
+                Activity: 'fa-solid fa-chart-line',
+                Power: 'fa-solid fa-power-off',
+                Truck: 'fa-solid fa-truck-pickup',
+                Bell: 'fa-solid fa-bell',
+                Navigation: 'fa-solid fa-location-arrow',
+                HeartPulse: 'fa-solid fa-heart-pulse',
+                ShieldCheck: 'fa-solid fa-shield-halved',
+                Siren: 'fa-solid fa-truck-medical',
+                MapIcon: 'fa-solid fa-map',
+                Settings: 'fa-solid fa-gear',
+                User: 'fa-solid fa-user',
+                Lock: 'fa-solid fa-lock',
+                Key: 'fa-solid fa-key',
+                QrCode: 'fa-solid fa-qrcode'
+            };
+
+            const baseClass = iconMap[name] || 'fa-solid fa-circle';
+            return <i className={`${baseClass} ${className}`} style={{ fontSize: `${size}px` }}></i>;
+        };
+
+        // --- LOGIN SCREEN COMPONENT ---
+        const LoginScreen = ({ onLogin }) => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if(username && password) onLogin();
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 font-sans">
+                    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl animate-in fade-in zoom-in duration-500">
+                        <div className="flex flex-col items-center mb-8">
+                            <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/30 mb-4 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                <Icon name="ShieldCheck" size={36} className="text-emerald-400" />
+                            </div>
+                            <h1 className="text-2xl font-bold text-slate-100 tracking-wider">AURA<span className="text-emerald-500">OS</span></h1>
+                            <p className="text-slate-400 text-sm mt-2">Vehicle Security & Traffic Dashboard</p>
+                        </div>
+                        
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <div>
+                                <label className="text-slate-400 text-sm font-medium mb-1 block">Vehicle ID / Username</label>
+                                <div className="relative">
+                                    <Icon name="User" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <input 
+                                        type="text" 
+                                        required
+                                        value={username}
+                                        onChange={e => setUsername(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                                        placeholder="Enter ID (e.g. MP-09-XX-1234)"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-slate-400 text-sm font-medium mb-1 block">Secure Pin / Password</label>
+                                <div className="relative">
+                                    <Icon name="Lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <input 
+                                        type="password" 
+                                        required
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                            </div>
+                            <button 
+                                type="submit"
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 mt-6 shadow-lg shadow-emerald-900/20"
+                            >
+                                <Icon name="Key" size={18} /> Authenticate Session
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN APP COMPONENT ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [vehicleStatus, setVehicleStatus] = useState('Normal'); 
+            const [engineStatus, setEngineStatus] = useState('Running');
+            const [location, setLocation] = useState('Sector 4, Main Highway');
+            const [speed, setSpeed] = useState(65);
+            const [logs, setLogs] = useState([
+                { id: 1, time: '10:00 AM', message: 'System initialized. All sensors online.' }
+            ]);
+            const [sosActive, setSosActive] = useState(false);
+            const [trafficDensity, setTrafficDensity] = useState('Moderate');
+            const [coordinates, setCoordinates] = useState({ lat: 22.7196, lng: 75.8577 });
+            const [towDetails, setTowDetails] = useState(null);
+
+            const vehicleDetails = {
+                id: "MP-09-XX-1234",
+                owner: "John Doe",
+                model: "AuraOS Smart EV",
+                color: "Obsidian Black",
+                chassisNo: "VIN1234567890ABC",
+                emergencyContact: "+91 98765 43210"
+            };
+            
+            const qrDataString = encodeURIComponent(
+                `Vehicle ID: ${vehicleDetails.id}\nOwner: ${vehicleDetails.owner}\nModel: ${vehicleDetails.model}\nContact: ${vehicleDetails.emergencyContact}`
+            );
+
+            const addLog = (message) => {
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                setLogs(prev => [{ id: Date.now(), time, message }, ...prev].slice(0, 8));
+            };
+
+            const simulateAccident = () => {
+                setVehicleStatus('Accident');
+                setEngineStatus('Stopped (Auto-Killed)');
+                setSpeed(0);
+                setSosActive(true);
+                addLog('CRITICAL: Impact detected. Engine automatically killed.');
+                addLog('SOS: Dispatching Ambulance to Sector 4, Main Highway.');
+                addLog('SOS: Emergency Contacts (Family) notified with live location.');
+            };
+
+            const simulateTowing = () => {
+                setVehicleStatus('Towed');
+                setEngineStatus('Off');
+                setSpeed(0);
+                setLocation('Central Traffic Impound Lot, Zone B');
+                setCoordinates({ lat: 22.7244, lng: 75.8839 });
+                setTowDetails({
+                    station: 'Zone B Traffic Impound Station',
+                    address: 'Near Highway Control Room, Sector 4',
+                    officer: 'Inspector R. Sharma (Badge #4492)',
+                    contact: '+91 800-555-0199',
+                    reason: 'Unauthorized Parking in Red Zone',
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                });
+                addLog('ALERT: Unauthorized movement detected while parked.');
+                addLog('ALERT: Vehicle is being towed by Traffic Police.');
+                addLog('INFO: Location updated to Central Traffic Impound Lot.');
+            };
+
+            const toggleEngine = () => {
+                if (engineStatus === 'Running') {
+                    setEngineStatus('Stopped (Remote Kill)');
+                    setSpeed(0);
+                    addLog('COMMAND: Remote engine kill activated. Vehicle stopped safely.');
+                } else {
+                    setEngineStatus('Running');
+                    setVehicleStatus('Normal');
+                    setSosActive(false);
+                    addLog('COMMAND: Engine restarted. Systems normal.');
+                }
+            };
+
+            const resolveEmergency = () => {
+                setVehicleStatus('Normal');
+                setEngineStatus('Running');
+                setSosActive(false);
+                setTowDetails(null);
+                setCoordinates({ lat: 22.7196, lng: 75.8577 });
+                addLog('UPDATE: Emergency resolved. Systems reset to normal.');
+            };
+
+            const Sidebar = () => (
+                <div className="w-20 lg:w-64 bg-slate-900 h-full flex flex-col border-r border-slate-800 transition-all duration-300">
+                    <div className="p-4 flex items-center justify-center lg:justify-start gap-3 text-emerald-400 border-b border-slate-800">
+                        <Icon name="ShieldCheck" size={32} />
+                        <span className="hidden lg:block font-bold text-xl tracking-wider">AURAOS</span>
+                    </div>
+                    <nav className="flex-1 mt-6 flex flex-col gap-2 px-2">
+                        {[
+                            { id: 'dashboard', icon: 'Activity', label: 'Control Center' },
+                            { id: 'map', icon: 'MapIcon', label: 'Live Tracking' },
+                            { id: 'emergency', icon: 'Siren', label: 'Emergency & SOS' },
+                            { id: 'identity', icon: 'QrCode', label: 'Digital Identity' },
+                            { id: 'contacts', icon: 'User', label: 'Family Contacts' },
+                            { id: 'settings', icon: 'Settings', label: 'Settings' },
+                        ].map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id)}
+                                className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                                    activeTab === item.id 
+                                        ? 'bg-emerald-500/10 text-emerald-400' 
+                                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                }`}
+                            >
+                                <Icon name={item.icon} size={24} />
+                                <span className="hidden lg:block font-medium">{item.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+                </div>
+            );
+
+            const StatusCard = ({ title, value, icon, colorClass, subtitle }) => (
+                <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex items-start gap-4">
+                    <div className={`p-3 rounded-lg ${colorClass} bg-opacity-10`}>
+                        <Icon name={icon} size={28} className={colorClass.replace('bg-', 'text-')} />
+                    </div>
+                    <div>
+                        <p className="text-slate-400 text-sm font-medium">{title}</p>
+                        <h3 className="text-2xl font-bold text-slate-100 mt-1">{value}</h3>
+                        {subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}
+                    </div>
+                </div>
+            );
+
+            const DashboardView = () => (
+                <div className="space-y-6 animate-in fade-in duration-500">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <StatusCard 
+                            title="Vehicle Status" 
+                            value={vehicleStatus} 
+                            icon="Car" 
+                            colorClass={
+                                vehicleStatus === 'Normal' ? 'text-emerald-500' : 
+                                vehicleStatus === 'Towed' ? 'text-amber-500' : 'text-rose-500'
+                            }
+                        />
+                        <StatusCard 
+                            title="Engine" 
+                            value={engineStatus} 
+                            icon="Power" 
+                            colorClass={engineStatus === 'Running' ? 'text-blue-500' : 'text-rose-500'}
+                        />
+                        <StatusCard 
+                            title="Current Speed" 
+                            value={`${speed} km/h`} 
+                            icon="Navigation" 
+                            colorClass="text-indigo-500"
+                            subtitle={speed > 80 ? "Warning: High Speed" : "Safe Speed"}
+                        />
+                        <StatusCard 
+                            title="Traffic AI" 
+                            value={trafficDensity} 
+                            icon="Activity" 
+                            colorClass={trafficDensity === 'Moderate' ? 'text-amber-500' : 'text-emerald-500'}
+                            subtitle="Auto-routing active"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6">
+                                <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
+                                    <Icon name="ShieldAlert" className="text-rose-500" /> Crisis Simulation Panel
+                                </h2>
+                                <p className="text-slate-400 mb-6 text-sm">Use these buttons to simulate how the system reacts to real-world emergencies and traffic enforcement.</p>
+                                
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <button 
+                                        onClick={simulateAccident}
+                                        className="flex flex-col items-center justify-center p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl hover:bg-rose-500/20 transition-all group"
+                                    >
+                                        <Icon name="AlertTriangle" size={32} className="text-rose-500 mb-2 group-hover:scale-110 transition-transform" />
+                                        <span className="text-rose-400 font-semibold text-sm">Simulate Accident</span>
+                                    </button>
+
+                                    <button 
+                                        onClick={simulateTowing}
+                                        className="flex flex-col items-center justify-center p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-all group"
+                                    >
+                                        <Icon name="Truck" size={32} className="text-amber-500 mb-2 group-hover:scale-110 transition-transform" />
+                                        <span className="text-amber-400 font-semibold text-sm">Simulate Towing</span>
+                                    </button>
+
+                                    <button 
+                                        onClick={toggleEngine}
+                                        className={`flex flex-col items-center justify-center p-4 border rounded-xl transition-all group ${
+                                            engineStatus === 'Running' 
+                                                ? 'bg-red-500/10 border-red-500/30 hover:bg-red-500/20' 
+                                                : 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20'
+                                        }`}
+                                    >
+                                        <Icon name="Power" size={32} className={`mb-2 group-hover:scale-110 transition-transform ${engineStatus === 'Running' ? 'text-red-500' : 'text-emerald-500'}`} />
+                                        <span className={`font-semibold text-sm ${engineStatus === 'Running' ? 'text-red-400' : 'text-emerald-400'}`}>
+                                            {engineStatus === 'Running' ? 'Remote Engine Kill' : 'Restart Engine'}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {sosActive && (
+                                <div className="bg-rose-950/40 border border-rose-500/50 rounded-2xl p-6 animate-pulse border-2">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-2xl font-bold text-rose-500 flex items-center gap-3">
+                                            <Icon name="Siren" size={32} /> EMERGENCY PROTOCOL ACTIVE
+                                        </h3>
+                                        <button onClick={resolveEmergency} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition-colors border border-slate-600">
+                                            Resolve / False Alarm
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="bg-black/20 p-4 rounded-xl flex items-center gap-4">
+                                            <Icon name="HeartPulse" className="text-rose-400" size={24} />
+                                            <div>
+                                                <p className="text-sm text-slate-400">Ambulance Status</p>
+                                                <p className="font-bold text-slate-100">Dispatched - ETA 4 mins</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-black/20 p-4 rounded-xl flex items-center gap-4">
+                                            <Icon name="Phone" className="text-emerald-400" size={24} />
+                                            <div>
+                                                <p className="text-sm text-slate-400">Family Notified</p>
+                                                <p className="font-bold text-slate-100">Yes - Location Shared</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {vehicleStatus === 'Towed' && (
+                                <div className="bg-amber-950/40 border-2 border-amber-500/50 rounded-2xl p-6">
+                                    <h3 className="text-xl font-bold text-amber-500 flex items-center gap-3 mb-4">
+                                        <Icon name="AlertTriangle" size={28} /> VEHICLE TOWED BY AUTHORITIES
+                                    </h3>
+                                    
+                                    {towDetails && (
+                                        <div className="bg-black/40 p-5 rounded-xl border border-amber-500/30 mb-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-sm text-slate-400 mb-1">Impound Location</p>
+                                                    <p className="font-bold text-slate-100">{towDetails.station}</p>
+                                                    <p className="text-sm text-slate-300 mt-1">{towDetails.address}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-slate-400 mb-1">Towing Details</p>
+                                                    <p className="text-sm text-slate-200"><span className="text-slate-400">Reason:</span> {towDetails.reason}</p>
+                                                    <p className="text-sm text-slate-200"><span className="text-slate-400">Officer:</span> {towDetails.officer}</p>
+                                                    <p className="text-sm text-slate-200"><span className="text-slate-400">Contact:</span> {towDetails.contact}</p>
+                                                    <p className="text-sm text-slate-200"><span className="text-slate-400">Time:</span> {towDetails.time}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-col sm:flex-row items-center gap-4 bg-black/20 p-4 rounded-xl">
+                                        <Icon name="MapPin" className="text-amber-400" size={32} />
+                                        <div className="flex-1">
+                                            <p className="text-sm text-slate-400">Current GPS Ping</p>
+                                            <p className="font-bold text-slate-100 text-lg">{location}</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                setVehicleStatus('Normal'); 
+                                                setLocation('Sector 4, Main Highway'); 
+                                                setTowDetails(null);
+                                                setCoordinates({ lat: 22.7196, lng: 75.8577 });
+                                                addLog('UPDATE: Vehicle retrieved from impound. Systems normal.');
+                                            }}
+                                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg font-bold transition-colors w-full sm:w-auto"
+                                        >
+                                            Mark as Retrieved
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 flex flex-col h-[500px]">
+                            <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
+                                <Icon name="Bell" size={20} className="text-blue-400" /> System Logs
+                            </h2>
+                            <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin">
+                                {logs.map((log) => (
+                                    <div key={log.id} className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 text-sm">
+                                        <div className="text-xs text-slate-500 mb-1">{log.time}</div>
+                                        <div className={`
+                                            ${log.message.includes('CRITICAL') || log.message.includes('SOS') ? 'text-rose-400' : ''}
+                                            ${log.message.includes('ALERT') ? 'text-amber-400' : ''}
+                                            ${log.message.includes('COMMAND') || log.message.includes('UPDATE') ? 'text-emerald-400' : ''}
+                                            ${!log.message.includes('CRITICAL') && !log.message.includes('SOS') && !log.message.includes('ALERT') && !log.message.includes('COMMAND') && !log.message.includes('UPDATE') ? 'text-slate-300' : ''}
+                                        `}>
+                                            {log.message}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-200 font-sans flex overflow-hidden">
+                    <Sidebar />
+                    
+                    <main className="flex-1 h-screen overflow-y-auto">
+                        <header className="bg-slate-900/50 backdrop-blur-md border-b border-slate-800 sticky top-0 z-10 px-8 py-4 flex items-center justify-between">
+                            <div>
+                                <h1 className="text-2xl font-bold text-white capitalize">{activeTab.replace('-', ' ')}</h1>
+                                <p className="text-sm text-slate-400 flex items-center gap-2 mt-1">
+                                    <Icon name="MapPin" size={14} /> Current Location: <span className="text-slate-300">{location}</span>
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-2
+                                    ${sosActive ? 'bg-rose-500/20 border-rose-500 text-rose-400 animate-pulse' : 'bg-emerald-500/20 border-emerald-500 text-emerald-400'}
+                                `}>
+                                    <div className={`w-2 h-2 rounded-full ${sosActive ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
+                                    {sosActive ? 'EMERGENCY MODE' : 'SYSTEM SECURE'}
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                                    <Icon name="User" size={20} className="text-slate-400" />
+                                </div>
+                            </div>
+                        </header>
+
+                        <div className="p-8">
+                            {activeTab === 'dashboard' && <DashboardView />}
+                            
+                            {activeTab === 'map' && (
+                                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-4 h-[70vh] flex flex-col animate-in fade-in">
+                                    <div className="flex items-center justify-between mb-4 px-2">
+                                        <h2 className="text-xl font-bold text-slate-300 flex items-center gap-2">
+                                            <Icon name="MapIcon" className="text-emerald-500" /> Live GPS Tracking
+                                        </h2>
+                                        <div className="px-3 py-1 bg-slate-900 rounded-lg text-sm font-medium border border-slate-700 text-slate-300 flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                            Signal Active
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 w-full rounded-xl overflow-hidden border border-slate-600 relative bg-slate-900">
+                                        <iframe
+                                            title="Live Location Map"
+                                            width="100%"
+                                            height="100%"
+                                            frameBorder="0"
+                                            scrolling="no"
+                                            marginHeight="0"
+                                            marginWidth="0"
+                                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${coordinates.lng-0.01},${coordinates.lat-0.01},${coordinates.lng+0.01},${coordinates.lat+0.01}&layer=mapnik&marker=${coordinates.lat},${coordinates.lng}`}
+                                            className="grayscale-[20%] invert-[90%] hue-rotate-[180deg] opacity-80" 
+                                        ></iframe>
+                                    </div>
+                                    <div className="mt-4 p-4 bg-slate-900 rounded-xl border border-slate-700 flex items-center gap-4 w-full">
+                                        <Icon name="MapPin" className={vehicleStatus === 'Towed' ? 'text-amber-500' : 'text-emerald-500'} />
+                                        <div className="text-left">
+                                            <p className="text-sm text-slate-400">Current GPS Coordinates / Ping Location</p>
+                                            <p className="font-medium text-slate-200">{location} ({coordinates.lat.toFixed(4)}, {coordinates.lng.toFixed(4)})</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'emergency' && (
+                                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 animate-in fade-in">
+                                    <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-3">
+                                        <Icon name="Siren" className="text-rose-500" size={32} /> Emergency Protocols
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
+                                            <h3 className="text-lg font-bold text-slate-300 mb-4 border-b border-slate-800 pb-2">Medical Response</h3>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-slate-400">Auto-Ambulance Dispatch</span>
+                                                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold">ENABLED</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-slate-400">Crash Severity Sensor</span>
+                                                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold">ACTIVE</span>
+                                                </div>
+                                                <p className="text-sm text-slate-500 mt-4">If G-force exceeds 4G, an ambulance is automatically dispatched to the exact GPS coordinates and doors unlock automatically.</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-700">
+                                            <h3 className="text-lg font-bold text-slate-300 mb-4 border-b border-slate-800 pb-2">Vehicle Control</h3>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-slate-400">Auto Fuel-Cutoff</span>
+                                                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold">ENABLED</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-slate-400">Remote Police Override</span>
+                                                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold">ACTIVE</span>
+                                                </div>
+                                                <p className="text-sm text-slate-500 mt-4">Traffic authorities can remotely safely decelerate and stop the vehicle in case of theft or severe traffic violations.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'contacts' && (
+                                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 animate-in fade-in">
+                                    <h2 className="text-2xl font-bold text-slate-100 mb-6">Emergency Contacts</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {['Wife (Primary)', 'Father (Secondary)', 'Family Doctor'].map((contact, i) => (
+                                            <div key={i} className="bg-slate-900 p-6 rounded-xl border border-slate-700 flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center">
+                                                    <Icon name="User" className="text-slate-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-200">{contact}</p>
+                                                    <p className="text-sm text-slate-500">+91 98765 4321{i}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'identity' && (
+                                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 animate-in fade-in">
+                                    <h2 className="text-2xl font-bold text-slate-100 mb-6 flex items-center gap-3">
+                                        <Icon name="QrCode" className="text-emerald-500" size={32} /> Digital Vehicle Identity
+                                    </h2>
+                                    <p className="text-slate-400 mb-8 max-w-2xl">
+                                        This digital identity card can be scanned by traffic authorities or emergency responders to instantly access vehicle ownership, registration status, and emergency contact details.
+                                    </p>
+
+                                    <div className="flex flex-col md:flex-row gap-8 items-start">
+                                        <div className="bg-white p-4 rounded-2xl shadow-lg shrink-0">
+                                            <img 
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrDataString}`} 
+                                                alt="Vehicle QR Code"
+                                                className="w-48 h-48 object-contain"
+                                            />
+                                        </div>
+
+                                        <div className="flex-1 bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full">
+                                            <div className="flex justify-between items-start mb-6 border-b border-slate-800 pb-4">
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-slate-100">{vehicleDetails.model}</h3>
+                                                    <p className="text-emerald-500 font-mono mt-1 text-lg">{vehicleDetails.id}</p>
+                                                </div>
+                                                <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold flex items-center gap-2">
+                                                    <Icon name="ShieldCheck" size={14} /> VERIFIED RC
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
+                                                <div>
+                                                    <p className="text-sm text-slate-500 mb-1">Registered Owner</p>
+                                                    <p className="font-medium text-slate-200 flex items-center gap-2"><Icon name="User" size={16} className="text-slate-400"/> {vehicleDetails.owner}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-slate-500 mb-1">Chassis Number (VIN)</p>
+                                                    <p className="font-medium text-slate-200 font-mono text-sm">{vehicleDetails.chassisNo}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-slate-500 mb-1">Vehicle Color</p>
+                                                    <p className="font-medium text-slate-200">{vehicleDetails.color}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-slate-500 mb-1">Emergency SOS Contact</p>
+                                                    <p className="font-medium text-rose-400 flex items-center gap-2"><Icon name="Phone" size={16} /> {vehicleDetails.emergencyContact}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'settings' && (
+                                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 animate-in fade-in h-[50vh] flex items-center justify-center text-slate-500">
+                                    <p>System Preferences & Integration Settings</p>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // --- ROOT RENDER ---
+        const Root = () => {
+            const [isAuth, setIsAuth] = useState(false);
+            if (!isAuth) {
+                return <LoginScreen onLogin={() => setIsAuth(true)} />;
+            }
+            return <App />;
+        };
+
+        const rootElement = document.getElementById('root');
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<Root />);
+    </script>
+</body>
+</html>
